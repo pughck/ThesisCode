@@ -42,7 +42,7 @@ public class HdfsOutBolt extends BaseRichBolt implements IHdfsBolt {
 				out = this.fs.create(path);
 			}
 
-			String tweet = tuple.getStringByField("tweet").replaceAll("\n", " ") + "\n\n";
+			String tweet = tuple.getStringByField("tweet") + "\n\n";
 
 			out.write(tweet.getBytes());
 			out.close();
@@ -69,5 +69,6 @@ public class HdfsOutBolt extends BaseRichBolt implements IHdfsBolt {
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 
+		// not used
 	}
 }

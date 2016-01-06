@@ -28,7 +28,8 @@ public class WriteBolt extends BaseRichBolt {
 			Writer writer = null;
 
 			String comp = tuple.getStringByField("company");
-			long time = System.currentTimeMillis() / (1000 * 60 * 60); // hour
+			long time = System.currentTimeMillis() / (1000 * 60 * 60); // every
+																		// hour
 			String path = this.basePath + comp + "/" + time + ".txt";
 
 			Files.createDirectories(Paths.get(this.basePath + comp));
@@ -57,5 +58,6 @@ public class WriteBolt extends BaseRichBolt {
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 
+		// not used
 	}
 }

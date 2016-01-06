@@ -11,6 +11,7 @@ import bolts.HdfsOutBolt;
 import bolts.StanfordNLPBolt;
 import bolts.HdfsOutBoltSentiment;
 import bolts.OpenNLPBolt;
+import bolts.OpinionFinderBolt;
 import bolts.WriteBolt;
 
 import spouts.TweetSpout;
@@ -40,13 +41,18 @@ public class Topology {
 		// write to hdfs
 		builder.setBolt("hdfsBolt", new HdfsOutBolt(), 5).fieldsGrouping("groupBolt", new Fields("company"));
 
-		builder.setBolt("sentimentBoltStanford", new StanfordNLPBolt(), 5).shuffleGrouping("groupBolt");
+		// opinionfinder sentiment to hdfs
+		builder.setBolt("sentimentBoltOpinionFinder", new OpinionFinderBolt(), 5).shuffleGrouping("groupBolt");
+		builder.setBolt("hdfsBoltSentimentOpinionFinder", new HdfsOutBoltSentiment("opinionfinder"), 5)
+				.fieldsGrouping("sentimentBoltOpinionFinder", new Fields("company"));
 
+		// stanford sentiment to hdfs
+		builder.setBolt("sentimentBoltStanford", new StanfordNLPBolt(), 5).shuffleGrouping("groupBolt");
 		builder.setBolt("hdfsBoltSentimentStanfordNLP", new HdfsOutBoltSentiment("stanfordNLP"), 5)
 				.fieldsGrouping("sentimentBoltStanford", new Fields("company"));
 
+		// openNLP sentiment to hdfs
 		builder.setBolt("sentimentBoltOpenNLP", new OpenNLPBolt(), 5).shuffleGrouping("groupBolt");
-
 		builder.setBolt("hdfsBoltSentimentOpenNLP", new HdfsOutBoltSentiment("openNLP"), 5)
 				.fieldsGrouping("sentimentBoltOpenNLP", new Fields("company"));
 
