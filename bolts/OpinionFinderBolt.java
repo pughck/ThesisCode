@@ -17,12 +17,18 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
+// this is really slow
+
 @SuppressWarnings("serial")
 public class OpinionFinderBolt extends BaseRichBolt implements ISentimentBolt {
 
 	private final String command = "java -Xmx1g -classpath "
 			+ "/tmp/opinionfinderv2.0/lib/weka.jar:/tmp/opinionfinderv2.0/lib/stanford-postagger.jar:/tmp/opinionfinderv2.0/opinionfinder.jar "
 			+ "opin.main.RunOpinionFinder /tmp/docs.txt -d -m /tmp/opinionfinderv2.0/models/ -l /tmp/opinionfinderv2.0/lexicons/";
+
+	private final String docList = "/tmp/docs.txt";
+	private final String tempTweet = "/tmp/temp.txt";
+	private final String sentimentPath = "_auto_anns/exp_polarity.txt";
 
 	private OutputCollector collector;
 
@@ -56,7 +62,7 @@ public class OpinionFinderBolt extends BaseRichBolt implements ISentimentBolt {
 
 	private void writeTweet(String tweet) throws IOException {
 
-		Writer writer = new BufferedWriter(new FileWriter("/tmp/temp.txt"));
+		Writer writer = new BufferedWriter(new FileWriter(this.tempTweet));
 		writer.write(tweet + "\n");
 		writer.close();
 	}
@@ -69,13 +75,12 @@ public class OpinionFinderBolt extends BaseRichBolt implements ISentimentBolt {
 
 	private int readSentimentResult() throws IOException {
 
-		// this logic should be right
 		double sentiment = 0;
 		int count = 0;
 
 		String line;
 
-		BufferedReader reader = new BufferedReader(new FileReader("/tmp/temp.txt_auto_anns/exp_polarity.txt"));
+		BufferedReader reader = new BufferedReader(new FileReader(this.tempTweet + this.sentimentPath));
 		while ((line = reader.readLine()) != null) {
 			sentiment += this.toNumSentiment.get(line.split("\t")[1].trim());
 			count++;
@@ -102,8 +107,8 @@ public class OpinionFinderBolt extends BaseRichBolt implements ISentimentBolt {
 		this.toSentiment.put(1, "positive");
 
 		try {
-			Writer writer = new BufferedWriter(new FileWriter("/tmp/docs.txt"));
-			writer.write("/tmp/temp.txt\n");
+			Writer writer = new BufferedWriter(new FileWriter(this.docList));
+			writer.write(this.tempTweet + "\n");
 			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();
