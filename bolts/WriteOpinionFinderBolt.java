@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Writer;
 import java.net.URI;
 import java.nio.file.Files;
@@ -34,7 +35,7 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 			+ "opin.main.RunOpinionFinder /tmp/docs.txt -d -m /tmp/opinionfinderv2.0/models/ -l /tmp/opinionfinderv2.0/lexicons/";
 
 	private final String hdfs = "hdfs://hadoop-01.csse.rose-hulman.edu:8020";
-	private final String basePath = "/tmp/stormOutput/";
+	private final String basePath = "/tmp/stormOutput/of/";
 	private final String sentimentPath = "_auto_anns/exp_polarity.txt";
 	private final String docList = "/tmp/docs.txt";
 
@@ -49,11 +50,14 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 			Writer writer = null;
 
 			String comp = tuple.getStringByField("company");
-			long time = System.currentTimeMillis() / (1000 * 60 * 60); // every
-																		// hour
+			long time = System.currentTimeMillis() / (1000 * 60 * 10); // every
+																		// 10
+																		// minutes
 
 			if (time != this.time) {
 				runOpinionFinder();
+
+				this.time = time;
 			}
 
 			String path = this.basePath + comp + "/" + time + ".txt";
@@ -100,6 +104,13 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 		// run opinionfinder
 		try {
 			Process p = Runtime.getRuntime().exec(command);
+
+			BufferedReader errors = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+			String error;
+			while ((error = errors.readLine()) != null) {
+				System.out.println(error);
+			}
+
 			p.waitFor();
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
@@ -124,7 +135,7 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 				BufferedReader reader = new BufferedReader(new FileReader(fileName + this.sentimentPath));
 				String line;
 				while ((line = reader.readLine()) != null) {
-					String sentiment = line.split("\t")[1].trim();
+					String sentiment = line.split("\t")[1].trim() + "\n";
 					out.write(sentiment.getBytes());
 				}
 				reader.close();
@@ -142,7 +153,7 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 
 		this.collector = collector;
 
-		this.time = System.currentTimeMillis() / (1000 * 60 * 60);
+		this.time = System.currentTimeMillis() / (1000 * 60 * 10);
 	}
 
 	@Override

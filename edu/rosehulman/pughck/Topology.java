@@ -13,7 +13,7 @@ import bolts.HdfsOutBoltSentiment;
 import bolts.OpenNLPBolt;
 import bolts.OpinionFinderBolt;
 import bolts.WriteBolt;
-
+import bolts.WriteOpinionFinderBolt;
 import spouts.TweetSpout;
 
 public class Topology {
@@ -41,7 +41,9 @@ public class Topology {
 		// write to hdfs
 		builder.setBolt("hdfsBolt", new HdfsOutBolt(), 5).fieldsGrouping("groupBolt", new Fields("company"));
 
-		// opinionfinder sentiment to hdfs
+		builder.setBolt("OFBolt", new WriteOpinionFinderBolt(), 5).fieldsGrouping("groupBolt", new Fields("company"));
+
+		// opinionfinder sentiment to hdfs every tweet
 		builder.setBolt("sentimentBoltOpinionFinder", new OpinionFinderBolt(), 5).shuffleGrouping("groupBolt");
 		builder.setBolt("hdfsBoltSentimentOpinionFinder", new HdfsOutBoltSentiment("opinionfinder"), 5)
 				.fieldsGrouping("sentimentBoltOpinionFinder", new Fields("company"));
