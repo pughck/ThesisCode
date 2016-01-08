@@ -34,10 +34,7 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 			+ "/tmp/opinionfinderv2.0/lib/weka.jar:/tmp/opinionfinderv2.0/lib/stanford-postagger.jar:/tmp/opinionfinderv2.0/opinionfinder.jar "
 			+ "opin.main.RunOpinionFinder /tmp/docs.txt -d -m /tmp/opinionfinderv2.0/models/ -l /tmp/opinionfinderv2.0/lexicons/";
 
-	private final String hdfs = "hdfs://hadoop-01.csse.rose-hulman.edu:8020";
 	private final String basePath = "/tmp/stormOutput/of/";
-	private final String sentimentPath = "_auto_anns/exp_polarity.txt";
-	private final String docList = "/tmp/docs.txt";
 
 	private OutputCollector collector;
 
@@ -50,12 +47,13 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 			Writer writer = null;
 
 			String comp = tuple.getStringByField("company");
-			long time = System.currentTimeMillis() / (1000 * 60 * 10); // every
-																		// 10
+			long time = System.currentTimeMillis() / (1000 * 60 * 30); // every
+																		// 30
 																		// minutes
 
 			if (time != this.time) {
-				runOpinionFinder();
+				Thread runAndWrite = new Thread(new RunAndWrite());
+				runAndWrite.start();
 
 				this.time = time;
 			}
@@ -78,87 +76,95 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 		}
 	}
 
-	private void runOpinionFinder() {
-
-		// determine and create document of files to analyze
-		List<String> fileNames = new ArrayList<>();
-
-		File[] dirs = new File(this.basePath).listFiles();
-		for (File dir : dirs) {
-			File[] files = new File(dir.getAbsolutePath()).listFiles();
-			for (File file : files) {
-				fileNames.add(file.getAbsolutePath());
-			}
-		}
-
-		try {
-			Writer writer = new BufferedWriter(new FileWriter(this.docList));
-			for (String fileName : fileNames) {
-				writer.write(fileName + "\n");
-			}
-			writer.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		// run opinionfinder
-		try {
-			Process p = Runtime.getRuntime().exec(command);
-
-			BufferedReader errors = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-			String error;
-			while ((error = errors.readLine()) != null) {
-				System.out.println(error);
-			}
-
-			p.waitFor();
-		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
-		}
-
-		// read opinionfinder results and write to hdfs
-		try {
-			FileSystem fs = FileSystem.get(URI.create(this.hdfs), new Configuration());
-			FSDataOutputStream out = null;
-
-			for (String fileName : fileNames) {
-
-				Path path = new Path(fileName);
-				try {
-					fs.getFileStatus(path);
-					out = fs.append(path);
-				} catch (FileNotFoundException e) {
-					out = fs.create(path);
-				}
-
-				// read file
-				BufferedReader reader = new BufferedReader(new FileReader(fileName + this.sentimentPath));
-				String line;
-				while ((line = reader.readLine()) != null) {
-					String sentiment = line.split("\t")[1].trim() + "\n";
-					out.write(sentiment.getBytes());
-				}
-				reader.close();
-			}
-
-			out.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
 	@SuppressWarnings("rawtypes")
 	@Override
 	public void prepare(Map map, TopologyContext context, OutputCollector collector) {
 
 		this.collector = collector;
 
-		this.time = System.currentTimeMillis() / (1000 * 60 * 10);
+		this.time = System.currentTimeMillis() / (1000 * 60 * 30);
 	}
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 
 		// not used
+	}
+
+	private class RunAndWrite implements Runnable {
+
+		@Override
+		public void run() {
+
+			final String hdfs = "hdfs://hadoop-01.csse.rose-hulman.edu:8020";
+			final String sentimentPath = "_auto_anns/exp_polarity.txt";
+			final String docList = "/tmp/docs.txt";
+
+			// determine and create document of files to analyze
+			List<String> fileNames = new ArrayList<>();
+
+			File[] dirs = new File(WriteOpinionFinderBolt.this.basePath).listFiles();
+			for (File dir : dirs) {
+				File[] files = new File(dir.getAbsolutePath()).listFiles();
+				for (File file : files) {
+					fileNames.add(file.getAbsolutePath());
+				}
+			}
+
+			try {
+				Writer writer = new BufferedWriter(new FileWriter(docList));
+				for (String fileName : fileNames) {
+					writer.write(fileName + "\n");
+				}
+				writer.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			// run opinionfinder
+			try {
+				Process p = Runtime.getRuntime().exec(command);
+
+				BufferedReader errors = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+				String error;
+				while ((error = errors.readLine()) != null) {
+					System.out.println(error);
+				}
+
+				p.waitFor();
+			} catch (IOException | InterruptedException e) {
+				e.printStackTrace();
+			}
+
+			// read opinionfinder results and write to hdfs
+			try {
+				FileSystem fs = FileSystem.get(URI.create(hdfs), new Configuration());
+				FSDataOutputStream out = null;
+
+				for (String fileName : fileNames) {
+
+					Path path = new Path(fileName);
+					try {
+						fs.getFileStatus(path);
+						out = fs.append(path);
+					} catch (FileNotFoundException e) {
+						out = fs.create(path);
+					}
+
+					// read file
+					BufferedReader reader = new BufferedReader(new FileReader(fileName + sentimentPath));
+					String line;
+					while ((line = reader.readLine()) != null) {
+						String sentiment = line.split("\t")[1].trim() + "\n";
+						out.write(sentiment.getBytes());
+					}
+					reader.close();
+				}
+
+				out.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }
