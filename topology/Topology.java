@@ -12,12 +12,13 @@ import backtype.storm.tuple.Fields;
 
 import bolts.GroupingBolt;
 import bolts.HdfsOutBolt;
-import bolts.StanfordNLPBolt;
 import bolts.HdfsOutBoltSentiment;
 import bolts.OpenNLPBolt;
+import bolts.StanfordNLPBolt;
 import bolts.WriteBolt;
 import bolts.WriteBoltSentiment;
 import bolts.WriteOpinionFinderBolt;
+
 import spouts.TweetSpout;
 
 public class Topology {
@@ -43,27 +44,27 @@ public class Topology {
 		builder.setBolt("groupBolt", new GroupingBolt(), 5).shuffleGrouping("tweetSpout");
 
 		// write locally
-//		builder.setBolt("writeBolt", new WriteBolt(), 5).fieldsGrouping("groupBolt", new Fields("company"));
+		builder.setBolt("writeBolt", new WriteBolt(), 5).fieldsGrouping("groupBolt", new Fields("company"));
 
 		// write to hdfs
-//		builder.setBolt("hdfsBolt", new HdfsOutBolt(), 5).fieldsGrouping("groupBolt", new Fields("company"));
+		builder.setBolt("hdfsBolt", new HdfsOutBolt(), 5).fieldsGrouping("groupBolt", new Fields("company"));
 
 		builder.setBolt("opinionfinderBolt", new WriteOpinionFinderBolt(), 5).fieldsGrouping("groupBolt",
 				new Fields("company"));
 
 		// stanford sentiment to hdfs
-//		builder.setBolt("sentimentBoltStanford", new StanfordNLPBolt(), 5).shuffleGrouping("groupBolt");
-//		builder.setBolt("writeBoltSentimentStanfordNLP", new WriteBoltSentiment("stanfordNLP"), 5)
-//				.fieldsGrouping("sentimentBoltStanford", new Fields("company"));
-//		builder.setBolt("hdfsBoltSentimentStanfordNLP", new HdfsOutBoltSentiment("stanfordNLP"), 5)
-//				.fieldsGrouping("sentimentBoltStanford", new Fields("company"));
+		builder.setBolt("sentimentBoltStanford", new StanfordNLPBolt(), 5).shuffleGrouping("groupBolt");
+		builder.setBolt("writeBoltSentimentStanfordNLP", new WriteBoltSentiment("stanfordNLP"), 5)
+				.fieldsGrouping("sentimentBoltStanford", new Fields("company"));
+		builder.setBolt("hdfsBoltSentimentStanfordNLP", new HdfsOutBoltSentiment("stanfordNLP"), 5)
+				.fieldsGrouping("sentimentBoltStanford", new Fields("company"));
 
 		// openNLP sentiment to hdfs
-//		builder.setBolt("sentimentBoltOpenNLP", new OpenNLPBolt(), 5).shuffleGrouping("groupBolt");
-//		builder.setBolt("writeBoltSentimentOpenNLP", new WriteBoltSentiment("openNLP"), 5)
-//				.fieldsGrouping("sentimentBoltOpenNLP", new Fields("company"));
-//		builder.setBolt("hdfsBoltSentimentOpenNLP", new HdfsOutBoltSentiment("openNLP"), 5)
-//				.fieldsGrouping("sentimentBoltOpenNLP", new Fields("company"));
+		builder.setBolt("sentimentBoltOpenNLP", new OpenNLPBolt(), 5).shuffleGrouping("groupBolt");
+		builder.setBolt("writeBoltSentimentOpenNLP", new WriteBoltSentiment("openNLP"), 5)
+				.fieldsGrouping("sentimentBoltOpenNLP", new Fields("company"));
+		builder.setBolt("hdfsBoltSentimentOpenNLP", new HdfsOutBoltSentiment("openNLP"), 5)
+				.fieldsGrouping("sentimentBoltOpenNLP", new Fields("company"));
 
 		StormSubmitter.submitTopology("topology", conf, builder.createTopology());
 	}
