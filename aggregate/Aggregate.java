@@ -51,6 +51,12 @@ public class Aggregate implements Runnable {
 		List<String> fileNames = new ArrayList<>();
 
 		File[] dirs = new File(this.basePath).listFiles();
+
+		if (dirs == null) {
+			System.err.println("nothing here");
+			return;
+		}
+
 		for (File dir : dirs) {
 
 			File[] files = new File(dir.getAbsolutePath()).listFiles();
@@ -58,8 +64,6 @@ public class Aggregate implements Runnable {
 				fileNames.add(file.getAbsolutePath());
 			}
 		}
-
-		System.out.println(fileNames);
 
 		for (String fileName : fileNames) {
 
