@@ -35,15 +35,17 @@ public class Aggregate implements Runnable {
 	public void run() {
 
 		try {
-			aggregateResults();
+			boolean results = aggregateResults();
 
-			writeResults();
+			if (results) {
+				writeResults();
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void aggregateResults() throws IOException {
+	private boolean aggregateResults() throws IOException {
 
 		this.results = new HashMap<>();
 
@@ -54,7 +56,8 @@ public class Aggregate implements Runnable {
 
 		if (dirs == null) {
 			System.err.println("nothing here");
-			return;
+
+			return false;
 		}
 
 		for (File dir : dirs) {
@@ -87,6 +90,8 @@ public class Aggregate implements Runnable {
 
 			reader.close();
 		}
+
+		return !fileNames.isEmpty();
 	}
 
 	private void writeResults() throws IOException {

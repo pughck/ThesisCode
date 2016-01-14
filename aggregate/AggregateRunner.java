@@ -7,7 +7,7 @@ public class AggregateRunner {
 		Thread stanford = new Thread(new Aggregate("/tmp/stormOutputSentiment/stanfordNLP/"));
 		stanford.start();
 
-		Thread openNLP = new Thread(new Aggregate("/tmp/stormOutputSentiment/openNLP"));
+		Thread openNLP = new Thread(new Aggregate("/tmp/stormOutputSentiment/openNLP/"));
 		openNLP.start();
 	}
 }
