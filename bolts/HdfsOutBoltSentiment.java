@@ -15,6 +15,7 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Tuple;
+import topology.Topology;
 
 @SuppressWarnings("serial")
 public class HdfsOutBoltSentiment extends BaseRichBolt implements IHdfsBolt {
@@ -39,9 +40,8 @@ public class HdfsOutBoltSentiment extends BaseRichBolt implements IHdfsBolt {
 			FSDataOutputStream out = null;
 
 			String comp = tuple.getStringByField("company");
+			long time = Topology.getTime();
 
-			// every hour
-			long time = System.currentTimeMillis() / (1000 * 60 * 60);
 			Path path = new Path(this.basePath + this.type + "/" + comp + "/", time + ".txt");
 			try {
 				this.fs.getFileStatus(path);

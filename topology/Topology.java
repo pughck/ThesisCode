@@ -68,4 +68,11 @@ public class Topology {
 
 		StormSubmitter.submitTopology("topology", conf, builder.createTopology());
 	}
+
+	// used for consistency across types
+	public static long getTime() {
+
+		// every hour
+		return System.currentTimeMillis() / (1000 * 60 * 60);
+	}
 }

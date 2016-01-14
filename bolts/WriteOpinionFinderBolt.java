@@ -27,6 +27,7 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Tuple;
+import topology.Topology;
 
 @SuppressWarnings("serial")
 public class WriteOpinionFinderBolt extends BaseRichBolt {
@@ -44,9 +45,7 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 			Writer writer = null;
 
 			String comp = tuple.getStringByField("company");
-
-			// every 10 minutes
-			long currentTime = System.currentTimeMillis() / (1000 * 60 * 10);
+			long currentTime = Topology.getTime();
 
 			if (currentTime != this.time) {
 				Thread runAndWrite = new Thread(new RunWriteAggregate(this.time));
@@ -79,7 +78,7 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 
 		this.collector = collector;
 
-		this.time = System.currentTimeMillis() / (1000 * 60 * 30);
+		this.time = Topology.getTime();
 	}
 
 	@Override
@@ -126,11 +125,6 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 			}
 
 			for (File dir : dirs) {
-				// File[] files = new File(dir.getAbsolutePath()).listFiles();
-				// for (File file : files) {
-				// fileNames.add(file.getAbsolutePath());
-				// }
-
 				fileNames.add(dir.getAbsolutePath() + "/" + this.time + ".txt");
 			}
 

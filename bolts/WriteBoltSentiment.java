@@ -13,6 +13,7 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Tuple;
+import topology.Topology;
 
 @SuppressWarnings("serial")
 public class WriteBoltSentiment extends BaseRichBolt {
@@ -35,11 +36,9 @@ public class WriteBoltSentiment extends BaseRichBolt {
 			Writer writer = null;
 
 			String comp = tuple.getStringByField("company");
+			long time = Topology.getTime();
 
-			// every hour
-			long currentTime = System.currentTimeMillis() / (1000 * 60 * 60);
-
-			String path = this.basePath + this.type + "/" + comp + "/" + currentTime + ".txt";
+			String path = this.basePath + this.type + "/" + comp + "/" + time + ".txt";
 
 			Files.createDirectories(Paths.get(this.basePath + this.type + "/" + comp));
 
