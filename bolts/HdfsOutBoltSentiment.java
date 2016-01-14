@@ -39,8 +39,9 @@ public class HdfsOutBoltSentiment extends BaseRichBolt implements IHdfsBolt {
 			FSDataOutputStream out = null;
 
 			String comp = tuple.getStringByField("company");
-			long time = System.currentTimeMillis() / (1000 * 60 * 60); // every
-																		// hour
+
+			// every hour
+			long time = System.currentTimeMillis() / (1000 * 60 * 60);
 			Path path = new Path(this.basePath + this.type + "/" + comp + "/", time + ".txt");
 			try {
 				this.fs.getFileStatus(path);
@@ -49,7 +50,7 @@ public class HdfsOutBoltSentiment extends BaseRichBolt implements IHdfsBolt {
 				out = this.fs.create(path);
 			}
 
-			String tweet = tuple.getStringByField("tweet") + "\t\t";
+			String tweet = tuple.getStringByField("tweet") + "\t";
 
 			String sentiment = tuple.getStringByField("sentiment") + "\n\n";
 
@@ -68,6 +69,7 @@ public class HdfsOutBoltSentiment extends BaseRichBolt implements IHdfsBolt {
 	public void prepare(Map map, TopologyContext context, OutputCollector collector) {
 
 		this.collector = collector;
+
 		try {
 			this.fs = FileSystem.get(URI.create(this.hdfs), new Configuration());
 		} catch (IOException e) {

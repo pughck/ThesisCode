@@ -15,11 +15,18 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Tuple;
 
 @SuppressWarnings("serial")
-public class WriteBolt extends BaseRichBolt {
+public class WriteBoltSentiment extends BaseRichBolt {
 
-	private final String basePath = "/tmp/stormOutput/";
+	private final String basePath = "/tmp/stormOutputSentiment/";
 
 	private OutputCollector collector;
+
+	private String type;
+
+	public WriteBoltSentiment(String type) {
+
+		this.type = type;
+	}
 
 	@Override
 	public void execute(Tuple tuple) {
@@ -30,17 +37,19 @@ public class WriteBolt extends BaseRichBolt {
 			String comp = tuple.getStringByField("company");
 
 			// every hour
-			long time = System.currentTimeMillis() / (1000 * 60 * 60);
+			long currentTime = System.currentTimeMillis() / (1000 * 60 * 60);
 
-			String path = this.basePath + comp + "/" + time + ".txt";
+			String path = this.basePath + this.type + "/" + comp + "/" + currentTime + ".txt";
 
-			Files.createDirectories(Paths.get(this.basePath + comp));
+			Files.createDirectories(Paths.get(this.basePath + this.type + "/" + comp));
 
 			writer = new BufferedWriter(new FileWriter(path, true));
 
-			String tweet = tuple.getStringByField("tweet") + "\n\n";
+			String tweet = tuple.getStringByField("tweet") + "\t";
 
-			writer.append(tweet);
+			String sentiment = tuple.getStringByField("sentiment") + "\n";
+
+			writer.append(tweet + sentiment);
 			writer.close();
 
 			this.collector.ack(tuple);

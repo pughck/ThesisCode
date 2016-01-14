@@ -6,8 +6,6 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
-
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -15,6 +13,7 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
+
 import opennlp.tools.doccat.DoccatModel;
 import opennlp.tools.doccat.DocumentCategorizerME;
 import opennlp.tools.doccat.DocumentSampleStream;
@@ -30,11 +29,6 @@ public class OpenNLPBolt extends BaseRichBolt implements ISentimentBolt {
 	private DocumentCategorizerME categorizer;
 
 	private Map<String, String> sentimentMap;
-
-	static {
-
-		URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
-	}
 
 	@Override
 	public void execute(Tuple tuple) {
@@ -59,11 +53,13 @@ public class OpenNLPBolt extends BaseRichBolt implements ISentimentBolt {
 		this.sentimentMap.put("0", "negative");
 		this.sentimentMap.put("1", "positive");
 
+		final String trainingFile = "hdfs://hadoop-01.csse.rose-hulman.edu:8020/tmp/trainingTweets.txt";
+
 		// http://technobium.com/sentiment-analysis-using-opennlp-document-categorizer/
 		InputStream dataIn = null;
 		try {
 			// TODO: real / better training file
-			dataIn = new URL("hdfs://hadoop-01.csse.rose-hulman.edu:8020/tmp/trainingTweets.txt").openStream();
+			dataIn = new URL(trainingFile).openStream();
 
 			ObjectStream lineStream = new PlainTextByLineStream(dataIn, "UTF-8");
 			ObjectStream sampleStream = new DocumentSampleStream(lineStream);

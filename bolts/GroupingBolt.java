@@ -14,8 +14,8 @@ import backtype.storm.tuple.Values;
 public class GroupingBolt extends BaseRichBolt {
 
 	private OutputCollector collector;
-	private final String[] companies = { "amazon", "google", "microsoft", "facebook", "twitter", "walmart", "target",
-			"delta", "mcdonalds", "burger king" };
+	private final String[] companies = { "amazon", "google", "microsoft", "facebook", "twitter", "expedia", "walmart",
+			"target", "delta", "mcdonalds", "burger king", "starbucks" };
 
 	@Override
 	public void execute(Tuple tuple) {
@@ -34,8 +34,6 @@ public class GroupingBolt extends BaseRichBolt {
 
 		if (company != "") {
 			this.collector.emit(new Values(tweet, company));
-		} else {
-			this.collector.emit(new Values(tweet, "none"));
 		}
 
 		this.collector.ack(tuple);
