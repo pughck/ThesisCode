@@ -121,6 +121,7 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 			File[] dirs = new File(WriteOpinionFinderBolt.this.basePath).listFiles();
 
 			if (dirs == null) {
+				System.err.println("nothing here");
 				return;
 			}
 
@@ -145,7 +146,7 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 				BufferedReader errors = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 				String error;
 				while ((error = errors.readLine()) != null) {
-					System.out.println(error);
+					System.err.println(error);
 				}
 
 				p.waitFor();
