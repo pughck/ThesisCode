@@ -9,5 +9,8 @@ public class AggregateRunner {
 
 		Thread openNLP = new Thread(new Aggregate("/tmp/stormOutputSentiment/openNLP/"));
 		openNLP.start();
+
+		Thread opinionfinder = new Thread(new OFAggregate("/tmp/stormOutputSentiment/opinionfinder/"));
+		opinionfinder.start();
 	}
 }

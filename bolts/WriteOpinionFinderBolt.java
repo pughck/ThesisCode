@@ -3,7 +3,6 @@ package bolts;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -94,11 +93,6 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 				+ "/tmp/opinionfinderv2.0/lib/weka.jar:/tmp/opinionfinderv2.0/lib/stanford-postagger.jar:/tmp/opinionfinderv2.0/opinionfinder.jar "
 				+ "opin.main.RunOpinionFinder /tmp/docs.txt -d -m /tmp/opinionfinderv2.0/models/ -l /tmp/opinionfinderv2.0/lexicons/";
 
-		private final String hdfs = "hdfs://hadoop-01.csse.rose-hulman.edu:8020";
-		private final String sentimentResultsPath = "sentimentResults/";
-
-		private FileSystem fs;
-
 		private List<String> fileNames;
 		private Map<String, Map<String, Integer>> results;
 
@@ -128,7 +122,7 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 			}
 
 			try {
-				readAndWriteResults();
+				readResults();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -180,23 +174,12 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 			p.waitFor();
 		}
 
-		// read opinionfinder results and write to hdfs
-		private void readAndWriteResults() throws IOException {
+		// read opinionfinder results and add to map
+		private void readResults() throws IOException {
 
 			final String sentimentPath = "_auto_anns/exp_polarity.txt";
 
-			this.fs = FileSystem.get(URI.create(this.hdfs), new Configuration());
-			FSDataOutputStream out = null;
-
 			for (String fileName : this.fileNames) {
-
-				Path path = new Path(fileName);
-				try {
-					this.fs.getFileStatus(path);
-					out = this.fs.append(path);
-				} catch (FileNotFoundException e) {
-					out = this.fs.create(path);
-				}
 
 				// read file
 				BufferedReader reader = new BufferedReader(new FileReader(fileName + sentimentPath));
@@ -204,8 +187,6 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 				while ((line = reader.readLine()) != null) {
 					System.out.println(line);
 					String sentiment = line.split("\t")[1].trim();
-
-					out.write((sentiment + "\n").getBytes());
 
 					// add to map
 					String company = fileName.split("/")[fileName.split("/").length - 2].trim();
@@ -224,11 +205,14 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 			}
 
 			System.out.println(this.results);
-
-			out.close();
 		}
 
 		private void writeResults() throws IOException {
+
+			final String hdfs = "hdfs://hadoop-01.csse.rose-hulman.edu:8020";
+			final String sentimentResultsPath = "sentimentResults/";
+
+			FileSystem fs = FileSystem.get(URI.create(hdfs), new Configuration());
 
 			Writer writer = null;
 			FSDataOutputStream out = null;
@@ -248,7 +232,7 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 				}
 
 				writer = new BufferedWriter(new FileWriter(compResults, false));
-				out = this.fs.create(hdfsPath);
+				out = fs.create(hdfsPath);
 
 				Map<String, Integer> companyResults = this.results.get(company);
 				for (String sentimentKey : companyResults.keySet()) {
