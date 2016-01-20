@@ -3,6 +3,7 @@ package aggregate;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -48,6 +49,7 @@ public class Aggregate implements Runnable {
 	private boolean aggregateResults() throws IOException {
 
 		this.results = new HashMap<>();
+		// TODO: if file exists - read and pre-populate map
 
 		// determine and create document of files to analyze
 		List<String> fileNames = new ArrayList<>();
@@ -74,12 +76,19 @@ public class Aggregate implements Runnable {
 			BufferedReader reader = new BufferedReader(new FileReader(fileName));
 			String line;
 			while ((line = reader.readLine()) != null) {
-				String sentiment = line.split("\t")[1].trim();
+				String sentiment;
+				try {
+					sentiment = line.split("\t")[1].trim();
+				} catch (ArrayIndexOutOfBoundsException e) {
+					System.err.println(fileName + "\n" + line);
+					e.printStackTrace();
+					continue;
+				}
 
 				String company = fileName.split("/")[fileName.split("/").length - 2].trim();
 				Map<String, Integer> companyResults = results.get(company);
 				if (companyResults == null) {
-					companyResults = new HashMap<String, Integer>();
+					companyResults = new HashMap<>();
 					companyResults.put("negative", 0);
 					companyResults.put("neutral", 0);
 					companyResults.put("positive", 0);
@@ -97,29 +106,48 @@ public class Aggregate implements Runnable {
 	private void writeResults() throws IOException {
 
 		final String hdfs = "hdfs://hadoop-01.csse.rose-hulman.edu:8020";
-		final String sentimentResultsPath = "sentimentResults/";
+		final String sentimentResultsPath = "sentimentResults.txt";
+
+		final String header = "COMP\t\tPOS\tNEU\tNEG\tNET\n";
 
 		FileSystem fs = FileSystem.get(URI.create(hdfs), new Configuration());
 
 		Writer writer = null;
 		FSDataOutputStream out = null;
 
-		for (String company : this.results.keySet()) {
+		String localPath = this.basePath + sentimentResultsPath;
+		Path hdfsPath = new Path(this.basePath + sentimentResultsPath);
 
-			String localPath = this.basePath + sentimentResultsPath + company + ".txt";
-			Path hdfsPath = new Path(this.basePath + sentimentResultsPath + company + ".txt");
+		Files.createDirectories(Paths.get(this.basePath));
+		writer = new BufferedWriter(new FileWriter(localPath, false));
 
-			Files.createDirectories(Paths.get(this.basePath + sentimentResultsPath));
-			writer = new BufferedWriter(new FileWriter(localPath, false));
+		writer.append(header);
+
+		try {
+			fs.getFileStatus(hdfsPath);
+			out = fs.append(hdfsPath);
+		} catch (FileNotFoundException e) {
 			out = fs.create(hdfsPath);
 
-			Map<String, Integer> companyResults = this.results.get(company);
-			for (String sentimentKey : companyResults.keySet()) {
-				String value = sentimentKey + "\t" + companyResults.get(sentimentKey) + "\n";
+			out.write(header.getBytes());
+		}
 
-				writer.append(value);
-				out.write(value.getBytes());
-			}
+		for (String company : this.results.keySet()) {
+
+			Map<String, Integer> companyResults = this.results.get(company);
+
+			int positive = companyResults.get("positive");
+			int neutral = companyResults.get("neutral");
+			int negative = companyResults.get("negative");
+
+			int net = 2 * positive + neutral - 2 * negative;
+
+			String firstDelim = (company.length() >= 8) ? "\t" : "\t\t";
+
+			String value = company + firstDelim + positive + "\t" + neutral + "\t" + negative + "\t" + net + "\n";
+
+			writer.append(value);
+			out.write(value.getBytes());
 		}
 
 		writer.close();

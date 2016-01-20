@@ -95,9 +95,11 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 				+ "opin.main.RunOpinionFinder /tmp/docs.txt -d -m /tmp/opinionfinderv2.0/models/ -l /tmp/opinionfinderv2.0/lexicons/";
 
 		private final String hdfs = "hdfs://hadoop-01.csse.rose-hulman.edu:8020";
+		private final String sentimentResultsPath = "sentimentResults/";
 
 		private FileSystem fs;
 
+		private List<String> fileNames;
 		private Map<String, Map<String, Integer>> results;
 
 		private long time;
@@ -110,91 +112,23 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 		@Override
 		public void run() {
 
-			final String sentimentPath = "_auto_anns/exp_polarity.txt";
-			final String docList = "/tmp/docs.txt";
-
+			this.fileNames = new ArrayList<>();
 			this.results = new HashMap<>();
-			// TODO: if file exists - read and pre-populate map
-
-			// determine and create document of files to analyze
-			List<String> fileNames = new ArrayList<>();
-
-			File[] dirs = new File(WriteOpinionFinderBolt.this.basePath).listFiles();
-
-			if (dirs == null) {
-				System.err.println("nothing here");
-				return;
-			}
-
-			for (File dir : dirs) {
-				fileNames.add(dir.getAbsolutePath() + "/" + this.time + ".txt");
-			}
 
 			try {
-				Writer writer = new BufferedWriter(new FileWriter(docList));
-				for (String fileName : fileNames) {
-					writer.write(fileName + "\n");
-				}
-				writer.close();
+				createDocList();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 
-			// run opinionfinder
 			try {
-				Process p = Runtime.getRuntime().exec(this.command);
-
-				BufferedReader errors = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-				String error;
-				while ((error = errors.readLine()) != null) {
-					System.err.println(error);
-				}
-
-				p.waitFor();
+				runOpinionFinder();
 			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 			}
 
-			// read opinionfinder results and write to hdfs
 			try {
-				this.fs = FileSystem.get(URI.create(this.hdfs), new Configuration());
-				FSDataOutputStream out = null;
-
-				for (String fileName : fileNames) {
-
-					Path path = new Path(fileName);
-					try {
-						this.fs.getFileStatus(path);
-						out = this.fs.append(path);
-					} catch (FileNotFoundException e) {
-						out = this.fs.create(path);
-					}
-
-					// read file
-					BufferedReader reader = new BufferedReader(new FileReader(fileName + sentimentPath));
-					String line;
-					while ((line = reader.readLine()) != null) {
-						String sentiment = line.split("\t")[1].trim();
-
-						out.write((sentiment + "\n").getBytes());
-
-						// add to map
-						String company = fileName.split("/")[fileName.split("/").length - 2].trim();
-						Map<String, Integer> companyResults = results.get(company);
-						if (companyResults == null) {
-							companyResults = new HashMap<String, Integer>();
-							companyResults.put("negative", 0);
-							companyResults.put("neutral", 0);
-							companyResults.put("positive", 0);
-						}
-						companyResults.put(sentiment, companyResults.get(sentiment) + 1);
-						this.results.put(company, companyResults);
-					}
-
-					reader.close();
-				}
-
-				out.close();
+				readAndWriteResults();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -206,9 +140,95 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 			}
 		}
 
-		private void writeResults() throws IOException {
+		// determine and create document of files to analyze
+		private void createDocList() throws IOException {
 
-			final String sentimentResultsPath = "sentimentResults/";
+			final String docList = "/tmp/docs.txt";
+
+			File[] dirs = new File(WriteOpinionFinderBolt.this.basePath).listFiles();
+
+			if (dirs == null) {
+				System.err.println("nothing here");
+				return;
+			}
+
+			for (File dir : dirs) {
+				this.fileNames.add(dir.getAbsolutePath() + "/" + this.time + ".txt");
+			}
+
+			System.out.println(this.fileNames);
+
+			Writer writer = new BufferedWriter(new FileWriter(docList));
+			for (String fileName : this.fileNames) {
+				writer.write(fileName + "\n");
+			}
+
+			writer.close();
+		}
+
+		// run opinionfinder
+		private void runOpinionFinder() throws IOException, InterruptedException {
+
+			Process p = Runtime.getRuntime().exec(this.command);
+
+			BufferedReader errors = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+			String error;
+			while ((error = errors.readLine()) != null) {
+				System.err.println(error);
+			}
+
+			p.waitFor();
+		}
+
+		// read opinionfinder results and write to hdfs
+		private void readAndWriteResults() throws IOException {
+
+			final String sentimentPath = "_auto_anns/exp_polarity.txt";
+
+			this.fs = FileSystem.get(URI.create(this.hdfs), new Configuration());
+			FSDataOutputStream out = null;
+
+			for (String fileName : this.fileNames) {
+
+				Path path = new Path(fileName);
+				try {
+					this.fs.getFileStatus(path);
+					out = this.fs.append(path);
+				} catch (FileNotFoundException e) {
+					out = this.fs.create(path);
+				}
+
+				// read file
+				BufferedReader reader = new BufferedReader(new FileReader(fileName + sentimentPath));
+				String line;
+				while ((line = reader.readLine()) != null) {
+					System.out.println(line);
+					String sentiment = line.split("\t")[1].trim();
+
+					out.write((sentiment + "\n").getBytes());
+
+					// add to map
+					String company = fileName.split("/")[fileName.split("/").length - 2].trim();
+					Map<String, Integer> companyResults = this.results.get(company);
+					if (companyResults == null) {
+						companyResults = new HashMap<>();
+						companyResults.put("negative", 0);
+						companyResults.put("neutral", 0);
+						companyResults.put("positive", 0);
+					}
+					companyResults.put(sentiment, companyResults.get(sentiment) + 1);
+					this.results.put(company, companyResults);
+				}
+
+				reader.close();
+			}
+
+			System.out.println(this.results);
+
+			out.close();
+		}
+
+		private void writeResults() throws IOException {
 
 			Writer writer = null;
 			FSDataOutputStream out = null;
@@ -219,9 +239,15 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 				Path hdfsPath = new Path(
 						WriteOpinionFinderBolt.this.basePath + sentimentResultsPath + company + ".txt");
 
-				Files.createDirectories(
-						Paths.get(WriteOpinionFinderBolt.this.basePath + sentimentResultsPath + company));
-				writer = new BufferedWriter(new FileWriter(localPath, false));
+				// populate map if needed
+				File compResults = new File(localPath);
+				if (compResults.exists()) {
+					populateMap(localPath, company);
+				} else {
+					Files.createDirectories(Paths.get(WriteOpinionFinderBolt.this.basePath + sentimentResultsPath));
+				}
+
+				writer = new BufferedWriter(new FileWriter(compResults, false));
 				out = this.fs.create(hdfsPath);
 
 				Map<String, Integer> companyResults = this.results.get(company);
@@ -231,10 +257,39 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 					writer.append(value);
 					out.write(value.getBytes());
 				}
+
+				writer.close();
+				out.close();
+			}
+		}
+
+		private void populateMap(String path, String company) throws IOException {
+
+			System.out.println("populating map");
+
+			BufferedReader reader = new BufferedReader(new FileReader(path));
+
+			String line;
+			while ((line = reader.readLine()) != null) {
+				String[] lineContents = line.split("\t");
+
+				String sentiment = lineContents[0].trim();
+				int value = Integer.parseInt(lineContents[1].trim());
+
+				Map<String, Integer> companyResults = this.results.get(company);
+				if (companyResults == null) {
+					companyResults = new HashMap<String, Integer>();
+					companyResults.put("negative", 0);
+					companyResults.put("neutral", 0);
+					companyResults.put("positive", 0);
+				}
+				companyResults.put(sentiment, companyResults.get(sentiment) + value);
+				this.results.put(company, companyResults);
+
+				this.results.put(company, companyResults);
 			}
 
-			writer.close();
-			out.close();
+			reader.close();
 		}
 	}
 }
