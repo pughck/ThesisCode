@@ -9,8 +9,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +34,7 @@ public class OFAggregate implements Runnable {
 	public void run() {
 
 		try {
-			boolean results = aggregateResults();
+			boolean results = readResults();
 
 			if (results) {
 				writeResults();
@@ -46,49 +44,84 @@ public class OFAggregate implements Runnable {
 		}
 	}
 
-	private boolean aggregateResults() throws IOException {
+	/***********************************************/
+	/***********************************************/
 
-		final String sentimentResults = "sentimentResults/";
+	// read opinionfinder results and add to map
+	private boolean readResults() throws IOException {
 
-		this.results = new HashMap<>();
+		final String sentimentFile = "/exp_polarity.txt";
 
-		List<String> fileNames = new ArrayList<>();
+		Map<String, List<String>> sentimentFiles = new HashMap<>();
 
-		File[] files = new File(this.basePath + sentimentResults).listFiles();
-
-		if (files == null) {
-			System.err.println("nothing here");
-
+		File[] compDirs = new File(this.basePath).listFiles();
+		if (compDirs == null) {
 			return false;
 		}
 
-		for (File file : files) {
-			fileNames.add(file.getAbsolutePath());
-		}
+		// get sentiment files
+		for (File cDir : compDirs) {
 
-		for (String fileName : fileNames) {
-
-			String company = fileName.split("/")[fileName.split("/").length - 1].trim().replace(".txt", "");
-			Map<String, Integer> companyResults = new HashMap<>();
-
-			// read file and add to map
-			BufferedReader reader = new BufferedReader(new FileReader(fileName));
-			String line;
-			while ((line = reader.readLine()) != null) {
-				String sentiment = line.split("\t")[0].trim();
-				int value = Integer.parseInt(line.split("\t")[1].trim());
-
-				companyResults.put(sentiment, value);
-				this.results.put(company, companyResults);
+			if (!cDir.isDirectory()) {
+				continue;
 			}
 
-			reader.close();
+			String company = cDir.getAbsolutePath().replaceAll(this.basePath, "").trim();
+
+			File[] sentDirs = new File(cDir.getAbsolutePath()).listFiles();
+
+			List<String> paths = sentimentFiles.get(company);
+			if (paths == null) {
+				paths = new ArrayList<>();
+			}
+
+			for (File sDir : sentDirs) {
+				if (sDir.isDirectory()) {
+					String path = sDir.getAbsolutePath() + sentimentFile;
+					paths.add(path);
+
+					sentimentFiles.put(company, paths);
+				}
+			}
 		}
 
-		return !fileNames.isEmpty();
+		this.results = new HashMap<>();
+
+		// read sentiment files and make results map
+		for (String company : sentimentFiles.keySet()) {
+
+			List<String> paths = sentimentFiles.get(company);
+
+			for (String path : paths) {
+
+				// read file
+				BufferedReader reader = new BufferedReader(new FileReader(path));
+				String line;
+				while ((line = reader.readLine()) != null) {
+					String sentiment = line.split("\t")[1].trim();
+
+					// add to map
+					Map<String, Integer> companyResults = this.results.get(company);
+					if (companyResults == null) {
+						companyResults = new HashMap<>();
+						companyResults.put("negative", 0);
+						companyResults.put("neutral", 0);
+						companyResults.put("positive", 0);
+					}
+					companyResults.put(sentiment, companyResults.get(sentiment) + 1);
+					this.results.put(company, companyResults);
+				}
+
+				reader.close();
+			}
+		}
+
+		return true;
 	}
 
 	private void writeResults() throws IOException {
+
+		// TODO: if results file exists - read and add to map
 
 		final String hdfs = "hdfs://hadoop-01.csse.rose-hulman.edu:8020";
 		final String sentimentResultsPath = "sentimentResults.txt";
@@ -103,7 +136,6 @@ public class OFAggregate implements Runnable {
 		String localPath = this.basePath + sentimentResultsPath;
 		Path hdfsPath = new Path(this.basePath + sentimentResultsPath);
 
-		Files.createDirectories(Paths.get(this.basePath));
 		writer = new BufferedWriter(new FileWriter(localPath, false));
 
 		writer.append(header);

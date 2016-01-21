@@ -9,8 +9,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,7 +47,6 @@ public class Aggregate implements Runnable {
 	private boolean aggregateResults() throws IOException {
 
 		this.results = new HashMap<>();
-		// TODO: if file exists - read and pre-populate map
 
 		// determine and create document of files to analyze
 		List<String> fileNames = new ArrayList<>();
@@ -63,6 +60,10 @@ public class Aggregate implements Runnable {
 		}
 
 		for (File dir : dirs) {
+
+			if (!dir.isDirectory()) {
+				continue;
+			}
 
 			File[] files = new File(dir.getAbsolutePath()).listFiles();
 			for (File file : files) {
@@ -105,6 +106,8 @@ public class Aggregate implements Runnable {
 
 	private void writeResults() throws IOException {
 
+		// TODO: if file exists - read and add to map
+
 		final String hdfs = "hdfs://hadoop-01.csse.rose-hulman.edu:8020";
 		final String sentimentResultsPath = "sentimentResults.txt";
 
@@ -118,7 +121,6 @@ public class Aggregate implements Runnable {
 		String localPath = this.basePath + sentimentResultsPath;
 		Path hdfsPath = new Path(this.basePath + sentimentResultsPath);
 
-		Files.createDirectories(Paths.get(this.basePath));
 		writer = new BufferedWriter(new FileWriter(localPath, false));
 
 		writer.append(header);

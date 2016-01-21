@@ -20,7 +20,7 @@ public class GroupingBolt extends BaseRichBolt {
 	@Override
 	public void execute(Tuple tuple) {
 
-		String tweet = tuple.getStringByField("tweet").toLowerCase().replaceAll("\n|\t", " ");
+		String tweet = tuple.getStringByField("tweet").toLowerCase().replaceAll("\n", " ");
 
 		String company = "";
 
