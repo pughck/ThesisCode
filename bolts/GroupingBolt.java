@@ -13,9 +13,10 @@ import backtype.storm.tuple.Values;
 @SuppressWarnings("serial")
 public class GroupingBolt extends BaseRichBolt {
 
+	private final String[] companies = { "addidas", "amazon", "delta", "expedia", "facebook", "google", "mcdonalds",
+			"microsoft", "nike", "starbucks", "target", "twitter", "walmart", "wendy's", "yahoo" };
+
 	private OutputCollector collector;
-	private final String[] companies = { "amazon", "google", "microsoft", "facebook", "twitter", "expedia", "walmart",
-			"target", "delta", "mcdonalds", "burger king", "starbucks" };
 
 	@Override
 	public void execute(Tuple tuple) {
