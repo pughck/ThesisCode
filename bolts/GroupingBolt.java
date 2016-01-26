@@ -13,8 +13,18 @@ import backtype.storm.tuple.Values;
 @SuppressWarnings("serial")
 public class GroupingBolt extends BaseRichBolt {
 
-	private final String[] companies = { "addidas", "amazon", "delta", "expedia", "facebook", "google", "mcdonalds",
-			"microsoft", "nike", "starbucks", "target", "twitter", "walmart", "wendy's", "yahoo" };
+	private final String[] companies = { "aflac", "aig", "alibaba", "allstate", "amazon", "american airlines",
+			"american express", "apple", "aramark", "astrazeneca", "at&t", "aviva", "bank of america",
+			"berkshire hathaway", "best buy", "blackrock", "boeing", "bp", "canon", "capital one", "caterpillar", "cbs",
+			"chevron", "cisco", "citigroup", "coke", "comcast", "costco", "csx", "cummins", "cvs", "delta", "disney",
+			"ebay", "eil lilly", "emc", "exelon", "expedia", "exxon mobile", "facebook", "fedex", "ford", "gap",
+			"general electric", "general motors", "goldman sachs", "google", "halliburton", "home depot", "honda",
+			"honeywell", "ibm", "ing", "intel", "jc penny", "john deere", "johnson & johnson", "jpmorgan chase",
+			"kohls", "kroger", "linkedin", "lockheed martin", "lowes", "marathon", "mastercard", "mcdonalds", "metlife",
+			"microsoft", "monsanto", "morgan stanley", "netflix", "nike", "nvidia", "oracle", "pepsi", "pfizer",
+			"procter & gamble", "progressive", "prudential", "qualcomm", "raytheon", "rockwell collins", "staples",
+			"starbucks", "target", "tesla", "time warner", "toyota", "travelers", "twitter", "ubs", "ups", "valero",
+			"verizon", "visa", "walmart", "wells fargo", "whirlpool", "whole foods", "yahoo" };
 
 	private OutputCollector collector;
 
