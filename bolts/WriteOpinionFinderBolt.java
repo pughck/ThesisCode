@@ -37,7 +37,7 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 			Writer writer = null;
 
 			String comp = tuple.getStringByField("company");
-			long currentTime = Topology.getTime();
+			long currentTime = Topology.getTime() / 4; // every half hour
 
 			if (currentTime != this.time) {
 				Thread runAndWrite = new Thread(new RunWriteAggregate(this.time));
@@ -70,7 +70,7 @@ public class WriteOpinionFinderBolt extends BaseRichBolt {
 
 		this.collector = collector;
 
-		this.time = Topology.getTime();
+		this.time = Topology.getTime() / 4; // every half hour
 	}
 
 	@Override
