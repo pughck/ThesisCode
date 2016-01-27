@@ -13,18 +13,18 @@ import backtype.storm.tuple.Values;
 @SuppressWarnings("serial")
 public class GroupingBolt extends BaseRichBolt {
 
-	private final String[] companies = { "aflac", "aig", "alibaba", "allstate", "amazon", "american airlines",
+	private final String[] companies = { "aflac", "alibaba", "allstate", "amazon", "american airlines",
 			"american express", "apple", "aramark", "astrazeneca", "at&t", "aviva", "bank of america",
-			"berkshire hathaway", "best buy", "blackrock", "boeing", "bp", "canon", "capital one", "caterpillar", "cbs",
-			"chevron", "cisco", "citigroup", "coke", "comcast", "costco", "csx", "cummins", "cvs", "delta", "disney",
-			"ebay", "eil lilly", "emc", "exelon", "expedia", "exxon mobile", "facebook", "fedex", "ford", "gap",
-			"general electric", "general motors", "goldman sachs", "google", "halliburton", "home depot", "honda",
-			"honeywell", "ibm", "ing", "intel", "jc penny", "john deere", "johnson & johnson", "jpmorgan chase",
-			"kohls", "kroger", "linkedin", "lockheed martin", "lowes", "marathon", "mastercard", "mcdonalds", "metlife",
-			"microsoft", "monsanto", "morgan stanley", "netflix", "nike", "nvidia", "oracle", "pepsi", "pfizer",
-			"procter & gamble", "progressive", "prudential", "qualcomm", "raytheon", "rockwell collins", "staples",
-			"starbucks", "target", "tesla", "time warner", "toyota", "travelers", "twitter", "ubs", "ups", "valero",
-			"verizon", "visa", "walmart", "wells fargo", "whirlpool", "whole foods", "yahoo" };
+			"berkshire hathaway", "best buy", "blackrock", "boeing", "canon", "capital one", "caterpillar", "chevron",
+			"cisco", "citigroup", "coke", "comcast", "costco", "cummins", "delta", "disney", "ebay", "eil lilly",
+			"exelon", "expedia", "exxon mobile", "facebook", "fedex", "ford", "gap", "general electric",
+			"general motors", "goldman sachs", "google", "halliburton", "home depot", "honda", "honeywell", "intel",
+			"jc penny", "john deere", "johnson & johnson", "jpmorgan chase", "kohls", "kroger", "linkedin",
+			"lockheed martin", "lowes", "marathon", "mastercard", "mcdonalds", "metlife", "microsoft", "monsanto",
+			"morgan stanley", "netflix", "nike", "nvidia", "oracle", "pepsi", "pfizer", "procter & gamble",
+			"progressive", "prudential", "qualcomm", "raytheon", "rockwell collins", "staples", "starbucks", "target",
+			"tesla", "time warner", "toyota", "travelers", "twitter", "valero", "verizon", "visa", "walmart",
+			"wells fargo", "whirlpool", "whole foods", "yahoo" };
 
 	private OutputCollector collector;
 
@@ -33,18 +33,11 @@ public class GroupingBolt extends BaseRichBolt {
 
 		String tweet = tuple.getStringByField("tweet").toLowerCase().replaceAll("\n", " ");
 
-		String company = "";
+		for (String company : this.companies) {
 
-		for (String comp : this.companies) {
-
-			if (tweet.contains(comp)) {
-				company = comp;
-				break;
+			if (tweet.contains(company)) {
+				this.collector.emit(new Values(tweet, company));
 			}
-		}
-
-		if (company != "") {
-			this.collector.emit(new Values(tweet, company));
 		}
 
 		this.collector.ack(tuple);
