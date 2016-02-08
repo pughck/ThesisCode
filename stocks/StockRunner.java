@@ -9,7 +9,7 @@ import yahoofinance.YahooFinance;
 public class StockRunner {
 
 	private static final String[] companies = { "AFL", "BABA", "ALL", "AMZN", "AAL", "AXP", "AAPL", "ARMK", "AZN", "T",
-			"AV", "BAC", "BRK.A", "BBY", "BLK", "BA", "CAJ", "COF", "CAT", "CVX", "CSCO", "C", "KO", "CMCSA", "COST",
+			"AV", "BAC", "BRK-A", "BBY", "BLK", "BA", "CAJ", "COF", "CAT", "CVX", "CSCO", "C", "KO", "CMCSA", "COST",
 			"CMI", "DAL", "DIS", "EBAY", "LLY", "EXC", "EXPE", "XOM", "FB", "FDX", "F", "GPS", "GE", "GM", "GS", "GOOG",
 			"HAL", "HD", "HMC", "HON", "INTC", "JCP", "DE", "JNJ", "JMP", "KSS", "KR", "LNKD", "LMT", "LOW", "MRO",
 			"MA", "MCD", "MET", "MSFT", "MON", "MS", "NFLX", "NKE", "NVDA", "ORCL", "PEP", "PFE", "PG", "PGR", "PRU",
@@ -21,16 +21,14 @@ public class StockRunner {
 		Stock stock = YahooFinance.get("^IXIC");
 		printInfo(stock);
 
-		System.out.println("\n\n");
+		stock = YahooFinance.get("^NYA");
+		printInfo(stock);
 
 		Map<String, Stock> stocks = YahooFinance.get(companies);
 
 		for (String company : companies) {
 			Stock compStock = stocks.get(company);
-
 			printInfo(compStock);
-
-			System.out.println("\n\n");
 		}
 	}
 
