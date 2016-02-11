@@ -48,6 +48,7 @@ public class GenerateFile {
 			int positive = Integer.parseInt(info[1].trim());
 			int neutral = Integer.parseInt(info[2].trim());
 			int negative = Integer.parseInt(info[3].trim());
+			int net = Integer.parseInt(info[4].trim());
 
 			Stock stock = stocks.get(symbol);
 			if (stock == null) {
@@ -64,9 +65,11 @@ public class GenerateFile {
 
 			double dif = change - exchangeChange;
 
-			String out = String.format("%.5f", dif) + "\t" + positive + "\t" + neutral + "\t" + negative + "\n";
+			final String TAB = "\t", NEWLINE = "\n";
+			StringBuilder builder = new StringBuilder().append(String.format("%.5f", dif)).append(TAB).append(positive)
+					.append(TAB).append(neutral).append(TAB).append(negative).append(TAB).append(net).append(NEWLINE);
 
-			writer.append(out);
+			writer.append(builder.toString());
 		}
 
 		reader.close();
