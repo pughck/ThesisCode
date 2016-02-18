@@ -71,6 +71,8 @@ public class Aggregate implements Runnable {
 			}
 		}
 
+		int errors = 0;
+
 		for (String fileName : fileNames) {
 
 			// read file and add to map
@@ -81,8 +83,8 @@ public class Aggregate implements Runnable {
 				try {
 					sentiment = line.split("\t")[1].trim();
 				} catch (ArrayIndexOutOfBoundsException e) {
-					System.err.println(fileName + "\n" + line);
-					e.printStackTrace();
+					errors++;
+
 					continue;
 				}
 
@@ -101,12 +103,12 @@ public class Aggregate implements Runnable {
 			reader.close();
 		}
 
+		System.err.println("Errors: " + errors);
+
 		return !fileNames.isEmpty();
 	}
 
 	private void writeResults() throws IOException {
-
-		// TODO: if file exists - read and add to map
 
 		final String hdfs = "hdfs://hadoop-01.csse.rose-hulman.edu:8020";
 		final String sentimentResultsPath = "sentimentResults.txt";

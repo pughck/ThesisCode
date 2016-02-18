@@ -44,9 +44,6 @@ public class OFAggregate implements Runnable {
 		}
 	}
 
-	/***********************************************/
-	/***********************************************/
-
 	// read opinionfinder results and add to map
 	private boolean readResults() throws IOException {
 
@@ -120,8 +117,6 @@ public class OFAggregate implements Runnable {
 	}
 
 	private void writeResults() throws IOException {
-
-		// TODO: if results file exists - read and add to map
 
 		final String hdfs = "hdfs://hadoop-01.csse.rose-hulman.edu:8020";
 		final String sentimentResultsPath = "sentimentResults.txt";
