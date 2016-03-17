@@ -4,34 +4,31 @@ public class PredictRunner {
 
 	public static void main(String[] args) throws InterruptedException {
 
-		Predict predict = new Predict("OpinionFinder",
-				"C:/Users/pughck/Documents/Academics/'15-'16/CS Thesis/results/of/training.txt",
-				"C:/Users/pughck/Documents/Academics/'15-'16/CS Thesis/results/of/testing.txt");
+		if (args.length < 2) {
+			System.err.println("Need at least totalMin arg and one date arg");
 
-		String ofCorr = predict.correlation();
-		String of = predict.predict();
+			return;
+		}
 
-		predict = new Predict("StanfordNLP",
-				"C:/Users/pughck/Documents/Academics/'15-'16/CS Thesis/results/stanford/training.txt",
-				"C:/Users/pughck/Documents/Academics/'15-'16/CS Thesis/results/stanford/testing.txt");
+		int totalMin = Integer.parseInt(args[0].trim());
 
-		String stanfordCorr = predict.correlation();
-		String stanford = predict.predict();
+		final String basePath = "C:/Users/pughck/Documents/Academics/'15-'16/CS Thesis/results/";
 
-		predict = new Predict("Apache OpenNLP",
-				"C:/Users/pughck/Documents/Academics/'15-'16/CS Thesis/results/open/training.txt",
-				"C:/Users/pughck/Documents/Academics/'15-'16/CS Thesis/results/open/testing.txt");
+		for (int i = 1; i < args.length; i++) {
+			Predict predict = new Predict(basePath + "of/training-" + totalMin + ".txt",
+					basePath + "of/" + args[i] + "/testing-" + totalMin + ".txt",
+					basePath + "of/results-" + totalMin + ".txt");
+			predict.predict();
 
-		String openCorr = predict.correlation();
-		String open = predict.predict();
+			predict = new Predict(basePath + "stanford/training-" + totalMin + ".txt",
+					basePath + "stanford/" + args[i] + "/testing-" + totalMin + ".txt",
+					basePath + "stanford/results-" + totalMin + ".txt");
+			predict.predict();
 
-		Thread.sleep(100);
-
-		System.out.println(ofCorr);
-		System.out.println(of);
-		System.out.println(stanfordCorr);
-		System.out.println(stanford);
-		System.out.println(openCorr);
-		System.out.println(open);
+			predict = new Predict(basePath + "open/training-" + totalMin + ".txt",
+					basePath + "open/" + args[i] + "/testing-" + totalMin + ".txt",
+					basePath + "open/results-" + totalMin + ".txt");
+			predict.predict();
+		}
 	}
 }
